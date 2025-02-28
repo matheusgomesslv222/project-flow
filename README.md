@@ -29,11 +29,17 @@ Este projeto acadêmico tem como foco aprimorar conhecimentos em desenvolvimento
 📅 Etapas do Desenvolvimento
 
 1️⃣ Planejamento: Mapeamento das funcionalidades do Bubble para React Native.
+
 2️⃣ Setup do Projeto: Configuração inicial do ambiente e dependências.
+
 3️⃣ Desenvolvimento do Backend: Arquitetura e integração com banco de dados.
+
 4️⃣ Criação das Telas: Implementação do design baseado no modelo original.
+
 5️⃣ Implementação das Funcionalidades: Desenvolvimento das principais features.
+
 6️⃣ Testes: Verificação da usabilidade e correção de bugs.
+
 7️⃣ Implantação e Ajustes Finais: Otimização do código e publicação.
 
 🎉 Conclusão
