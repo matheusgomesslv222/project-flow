@@ -1,4 +1,4 @@
- # Dependencies
+# Dependencies
 node_modules/
 
 # Expo
@@ -32,3 +32,13 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 expo-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs
+*.log
