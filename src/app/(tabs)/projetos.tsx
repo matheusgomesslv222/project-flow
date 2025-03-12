@@ -1,14 +1,23 @@
-import { View, Text, TextInput, Button, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, TouchableOpacity, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
-import React from 'react';
-import { Picker } from '@react-native-picker/picker'; // Adicione esta importação
+import React, { useState } from 'react';
+import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 
-
 export default function Projetos() {
     const { user } = useAuth();
+    const [startDate, setStartDate] = useState(new Date());
+    const [endDate, setEndDate] = useState(new Date());
+    const [showStartPicker, setShowStartPicker] = useState(false);
+    const [showEndPicker, setShowEndPicker] = useState(false);
+
+    const formatDate = (date: Date) => {
+        return date.toLocaleDateString('pt-BR');
+    };
+
+    
 
     return (
         <SafeAreaView style={{ flex: 1, padding: 16 }}>
@@ -89,9 +98,85 @@ export default function Projetos() {
                                 </View>
                             </View>
 
+                            <View style={{ gap: 12 }}>
+                                <View>
+                                    <Text style={{ fontSize: 16, marginBottom: 4 }}>Data Inicial</Text>
+                                    <Pressable
+                                        onPress={() => setShowStartPicker(true)}
+                                        style={{
+                                            backgroundColor: '#FFF',
+                                            padding: 12,
+                                            borderRadius: 8,
+                                            borderWidth: 1,
+                                            borderColor: '#DDD',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        <Text>{formatDate(startDate)}</Text>
+                                        <MaterialIcons name="calendar-today" size={20} color="#666" />
+                                    </Pressable>
+                                </View>
+
+                                <View>
+                                    <Text style={{ fontSize: 16, marginBottom: 4 }}>Data Final</Text>
+                                    <Pressable
+                                        onPress={() => setShowEndPicker(true)}
+                                        style={{
+                                            backgroundColor: '#FFF',
+                                            padding: 12,
+                                            borderRadius: 8,
+                                            borderWidth: 1,
+                                            borderColor: '#DDD',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between'
+                                        }}
+                                    >
+                                        <Text>{formatDate(endDate)}</Text>
+                                        <MaterialIcons name="calendar-today" size={20} color="#666" />
+                                    </Pressable>
+                                </View>
+
+                                {showStartPicker && (
+                                    <DateTimePicker
+                                        value={startDate}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            setShowStartPicker(false);
+                                            if (selectedDate) {
+                                                setStartDate(selectedDate);
+                                            }
+                                        }}
+                                        locale="pt-BR"
+                                    />
+                                )}
+
+                                {showEndPicker && (
+                                    <DateTimePicker
+                                        value={endDate}
+                                        mode="date"
+                                        display="default"
+                                        onChange={(event, selectedDate) => {
+                                            setShowEndPicker(false);
+                                            if (selectedDate) {
+                                                setEndDate(selectedDate);
+                                            }
+                                        }}
+                                        locale="pt-BR"
+                                        minimumDate={startDate}
+                                    />
+                                )}
+                            </View>
+
                             <Button 
                                 title="Cadastrar Projeto"
-                                onPress={() => {}}
+                                onPress={() => {
+                                    console.log('Data inicial:', startDate);
+                                    console.log('Data final:', endDate);
+                                }}
                                 color="#4169E1"
                             />
                         </View>
