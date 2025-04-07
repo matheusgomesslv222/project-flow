@@ -6,6 +6,8 @@ import { Picker } from '@react-native-picker/picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { useProjetoDatabase } from '@/database/UseProjetoDatabase';
+
 export default function Projetos() {
     const { user } = useAuth();
     const [startDate, setStartDate] = useState(new Date());
@@ -13,11 +15,29 @@ export default function Projetos() {
     const [showStartPicker, setShowStartPicker] = useState(false);
     const [showEndPicker, setShowEndPicker] = useState(false);
 
+    const [nomeCliente, setNomeCliente] = useState('');
+    const [nomeProjeto, setNomeProjeto] = useState('');
+    const [descricao, setDescricao] = useState('');
+    const [status, setStatus] = useState('Em Planejamento');
+
+    const { create } = useProjetoDatabase();
+
     const formatDate = (date: Date) => {
         return date.toLocaleDateString('pt-BR');
     };
 
-    
+    const createProjeto = () => {
+        const projeto = {
+            nomeCliente: nomeCliente,
+            nomeProjeto: nomeProjeto,
+            descricao: descricao,
+            status: status,
+            dataInicio: startDate,
+            dataFim: endDate
+        }
+        
+        create(projeto);
+    }
 
     return (
         <SafeAreaView style={{ flex: 1, padding: 16 }}>
@@ -43,6 +63,8 @@ export default function Projetos() {
                                         borderColor: '#DDD'
                                     }}
                                     placeholder="Digite o nome do cliente"
+                                    onChangeText={setNomeCliente}
+                                    value={nomeCliente}
                                 />
                             </View>
 
@@ -57,6 +79,8 @@ export default function Projetos() {
                                         borderColor: '#DDD'
                                     }}
                                     placeholder="Digite o nome do projeto"
+                                    onChangeText={setNomeProjeto}
+                                    value={nomeProjeto} 
                                 />
                             </View>
 
@@ -77,6 +101,8 @@ export default function Projetos() {
                                     multiline
                                     numberOfLines={4}
                                     placeholder="Digite a descrição do projeto"
+                                    onChangeText={setDescricao}
+                                    value={descricao}   
                                 />
                             </View>
 
@@ -90,10 +116,12 @@ export default function Projetos() {
                                 }}>
                                     <Picker
                                         style={{ height: 60 }}
+                                        selectedValue={status}
+                                        onValueChange={(itemValue) => setStatus(itemValue)}
                                     >
-                                        <Picker.Item label="Em Planejamento" value="planejamento" />
-                                        <Picker.Item label="Em Andamento" value="andamento" />
-                                        <Picker.Item label="Concluído" value="concluido" />
+                                        <Picker.Item label="Em Planejamento" value="Em Planejamento" />
+                                        <Picker.Item label="Em Andamento" value="Em Andamento" />
+                                        <Picker.Item label="Concluído" value="Concluído" />
                                     </Picker>
                                 </View>
                             </View>
@@ -173,10 +201,7 @@ export default function Projetos() {
 
                             <Button 
                                 title="Cadastrar Projeto"
-                                onPress={() => {
-                                    console.log('Data inicial:', startDate);
-                                    console.log('Data final:', endDate);
-                                }}
+                                onPress={createProjeto}
                                 color="#4169E1"
                             />
                         </View>
