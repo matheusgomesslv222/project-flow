@@ -1,4 +1,4 @@
-import { View, Text, Button } from 'react-native';
+import { View, Text, Button, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
@@ -6,7 +6,6 @@ import { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useProjetoDatabase } from '@/database/UseProjetoDatabase';
-
 
 const Tabs = createBottomTabNavigator();
 
@@ -22,26 +21,19 @@ interface Projeto {
 export default function Home() {
     const { user, setUser } = useAuth();
     const router = useRouter();
-
     const [projetos, setProjetos] = useState<Projeto[]>([]);
-
     const projetoDatabase = useProjetoDatabase();
 
-    // Proteção da rota - redireciona para login se não houver usuário
     useEffect(() => {
         if (!user) {
             router.replace('/login');
         }
     }, [user]);
 
-    // Função para fazer logout
     const handleLogout = () => {
         setUser(null);
         router.replace('/login');
     };
-
-    // Se não houver usuário, não renderiza nada
-    if (!user) return null;
 
     useEffect(() => {
         const loadProjetos = async () => {
@@ -59,119 +51,206 @@ export default function Home() {
     }, []);
 
     const countProjetosPorStatus = (statusType: string) => {
-        // Verifica se há projetos antes de tentar acessá-los
         if (!projetos || projetos.length === 0) {
             return 0;
         }
-        //console.log("Projetos", projetos);
         return projetos.filter(projeto => projeto.status === statusType).length;
     };
 
+    if (!user) return null;
+
     return (
-        <SafeAreaView style={{ flex: 1, padding: 16 }}>
-            <View style={{ gap: 16 }}>
-                <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ fontSize: 20, fontWeight: 'bold' }}>
-                        Bem-vindo, {user.name}
-                    </Text>
-                    <View style={{ flexDirection: 'row', width: '100%', alignItems: 'center', justifyContent: 'center'}}>
-                        <Button title="Sair" onPress={handleLogout}/>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#F8F9FA' }}>
+            <View style={{ flex: 1, padding: 20 }}>
+                {/* Header */}
+                <View style={{ 
+                    flexDirection: 'row', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    marginBottom: 30,
+                    backgroundColor: '#FFF',
+                    padding: 15,
+                    borderRadius: 12,
+                    elevation: 2,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                }}>
+                    <View>
+                        <Text style={{ fontSize: 16, color: '#666' }}>Bem-vindo,</Text>
+                        <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#333' }}>
+                            {user.name}
+                        </Text>
+                    </View>
+                    <TouchableOpacity
+                        onPress={handleLogout}
+                        style={{
+                            backgroundColor: '#FF4444',
+                            paddingHorizontal: 15,
+                            paddingVertical: 8,
+                            borderRadius: 8,
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                        }}
+                    >
+                        <MaterialIcons name="logout" size={20} color="#FFF" />
+                        <Text style={{ color: '#FFF', marginLeft: 5 }}>Sair</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Cards de Status */}
+                <View style={{ 
+                    gap: 15,
+                    marginBottom: 30,
+                }}>
+                    {/* Card Planejamento */}
+                    <View style={{
+                        backgroundColor: '#FFF',
+                        padding: 20,
+                        borderRadius: 12,
+                        elevation: 3,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#FFD700',
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                            <MaterialIcons name="schedule" size={24} color="#FFD700" />
+                            <Text style={{ marginLeft: 8, color: '#666', fontSize: 14 }}>Em Planejamento</Text>
+                        </View>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#333' }}>
+                            {countProjetosPorStatus('planejamento')}
+                        </Text>
+                    </View>
+
+                    {/* Card Em Andamento */}
+                    <View style={{
+                        backgroundColor: '#FFF',
+                        padding: 20,
+                        borderRadius: 12,
+                        elevation: 3,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#4169E1',
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                            <MaterialIcons name="work" size={24} color="#4169E1" />
+                            <Text style={{ marginLeft: 8, color: '#666', fontSize: 14 }}>Em Andamento</Text>
+                        </View>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#333' }}>
+                            {countProjetosPorStatus('Em Andamento')}
+                        </Text>
+                    </View>
+
+                    {/* Card Concluído */}
+                    <View style={{
+                        backgroundColor: '#FFF',
+                        padding: 20,
+                        borderRadius: 12,
+                        elevation: 3,
+                        shadowColor: '#000',
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 4,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#32CD32',
+                    }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                            <MaterialIcons name="check-circle" size={24} color="#32CD32" />
+                            <Text style={{ marginLeft: 8, color: '#666', fontSize: 14 }}>Concluídos</Text>
+                        </View>
+                        <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#333' }}>
+                            {countProjetosPorStatus('Concluído')}
+                        </Text>
                     </View>
                 </View>
 
-                <View style={{ gap: 16 }}>
-                    {/* Cards de Status */}
+                {/* Lista de Projetos */}
+                <View style={{ flex: 1 }}>
                     <View style={{ 
                         flexDirection: 'row', 
-                        justifyContent: 'space-between',
+                        justifyContent: 'space-between', 
+                        alignItems: 'center',
                         marginBottom: 20,
-                        gap: 10
                     }}>
-                        {/* Card Planejamento */}
-                        <View style={{
-                            flex: 1,
-                            backgroundColor: '#E8F5E9',
-                            padding: 16,
-                            borderRadius: 8,
-                            alignItems: 'center',
-                            elevation: 2,
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 3.84,
-                        }}>
-                            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#2E7D32' }}>
-                                {countProjetosPorStatus('planejamento')}
-                            </Text>
-                            <Text style={{ color: '#2E7D32', marginTop: 4, textAlign: 'center' }}>Em Planejamento</Text>
-                        </View>
-
-                        {/* Card Em Andamento */}
-                        <View style={{
-                            flex: 1,
-                            backgroundColor: '#E3F2FD',
-                            padding: 16,
-                            borderRadius: 8,
-                            alignItems: 'center',
-                            elevation: 2,
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 3.84,
-                        }}>
-                            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#1565C0' }}>
-                                {countProjetosPorStatus('Em Andamento')}
-                            </Text>
-                            <Text style={{ color: '#1565C0', marginTop: 4, textAlign: 'center' }}>Em Andamento</Text>
-                        </View>
-
-                        {/* Card Concluído */}
-                        <View style={{
-                            flex: 1,
-                            backgroundColor: '#F3E5F5',
-                            padding: 16,
-                            borderRadius: 8,
-                            alignItems: 'center',
-                            elevation: 2,
-                            shadowColor: '#000',
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.25,
-                            shadowRadius: 3.84,
-                        }}>
-                            <Text style={{ fontSize: 24, fontWeight: 'bold', color: '#6A1B9A' }}>
-                                {countProjetosPorStatus('Concluído')}
-                            </Text>
-                            <Text style={{ color: '#6A1B9A', marginTop: 4, textAlign: 'center' }}>Concluídos</Text>
-                        </View>
+                        <Text style={{ fontSize: 22, fontWeight: 'bold', color: '#333' }}>
+                            Seus Projetos
+                        </Text>
+                        <TouchableOpacity
+                            style={{
+                                backgroundColor: '#4169E1',
+                                paddingHorizontal: 15,
+                                paddingVertical: 8,
+                                borderRadius: 8,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <MaterialIcons name="add" size={20} color="#FFF" />
+                            <Text style={{ color: '#FFF', marginLeft: 5 }}>Novo Projeto</Text>
+                        </TouchableOpacity>
+                    </View>
+                    
+                    <View style={{ gap: 15 }}>
+                        {projetos.map((projeto, index) => (
+                            <View 
+                                key={index} 
+                                style={{ 
+                                    backgroundColor: '#FFF',
+                                    padding: 20,
+                                    borderRadius: 12,
+                                    elevation: 2,
+                                    shadowColor: '#000',
+                                    shadowOffset: { width: 0, height: 2 },
+                                    shadowOpacity: 0.1,
+                                    shadowRadius: 4,
+                                }}
+                            >
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333' }}>
+                                        {projeto.nomeProjeto}
+                                    </Text>
+                                    <View style={{ 
+                                        backgroundColor: '#F0F0F0',
+                                        paddingHorizontal: 10,
+                                        paddingVertical: 5,
+                                        borderRadius: 15,
+                                    }}>
+                                        <Text style={{ color: '#666', fontSize: 12 }}>
+                                            {projeto.status}
+                                        </Text>
+                                    </View>
+                                </View>
+                                
+                                <Text style={{ color: '#666', marginBottom: 10 }}>
+                                    Cliente: {projeto.nomeCliente}
+                                </Text>
+                                
+                                <View style={{ 
+                                    flexDirection: 'row', 
+                                    justifyContent: 'space-between',
+                                    borderTopWidth: 1,
+                                    borderTopColor: '#F0F0F0',
+                                    paddingTop: 10,
+                                }}>
+                                    <Text style={{ color: '#666', fontSize: 12 }}>
+                                        Início: {projeto.dataInicio.toLocaleDateString('pt-BR')}
+                                    </Text>
+                                    <Text style={{ color: '#666', fontSize: 12 }}>
+                                        Término: {projeto.dataFim.toLocaleDateString('pt-BR')}
+                                    </Text>
+                                </View>
+                            </View>
+                        ))}
                     </View>
                 </View>
             </View>
-            <View style={{ marginTop: 24 }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>
-                    Seus Projetos
-                </Text>
-                
-                <View style={{ gap: 12 }}>
-                    {projetos.map((projeto, index) => (
-                        <View key={index} style={{ 
-                            backgroundColor: '#FFF',
-                            padding: 16,
-                            borderRadius: 8,
-                            borderWidth: 1,
-                            borderColor: '#E0E0E0'
-                        }}>
-                            <Text style={{ fontSize: 16, fontWeight: 'bold' }}>
-                                {projeto.nomeProjeto}
-                            </Text>
-                            <Text style={{ color: '#666', marginTop: 4 }}>
-                                Status: {projeto.status}
-                            </Text>
-                            
-                        </View>
-                    ))}
-                </View>
-            </View>
-            
         </SafeAreaView>
     );
 }
