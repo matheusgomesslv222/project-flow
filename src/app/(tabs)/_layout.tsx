@@ -30,15 +30,7 @@ export default function TabsLayout() {
                     ),
                 }}
             />
-            <Tabs.Screen
-                name="projetos"
-                options={{
-                    title: 'Projetos',
-                    tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="folder" size={size} color={color} />
-                    ),
-                }}
-            />
+            
             <Tabs.Screen
                 name="tarefas"
                 options={{

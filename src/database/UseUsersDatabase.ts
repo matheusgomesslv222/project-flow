@@ -40,10 +40,11 @@ export function useUsersDatabase() {
             }
             try{
                 const query = "SELECT * FROM users WHERE email = $email AND password = $password";
-                
+                console.log("Email", email);
+                console.log("Password", password);
                 
                 const response = await database.getAllAsync(query, `${email}`, `${password}`);
-                console.log(response);
+                console.log("Resposta",response);
                 return response;
             } catch (error) {
                 console.error(error);

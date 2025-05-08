@@ -3,7 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '@/contexts/AuthContext';
 import React, { useState } from 'react';
 import { Picker } from '@react-native-picker/picker';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useProjetoDatabase } from '@/database/UseProjetoDatabase';
@@ -27,17 +26,39 @@ export default function Projetos() {
     };
 
     const createProjeto = () => {
-        const projeto = {
+        if (!user || !user.id) {
+            console.error("Usuário não autenticado ou ID do usuário indisponível para criar projeto.");
+            alert("Erro: Usuário não autenticado. Não é possível criar o projeto.");
+            return;
+        }
+
+        const projetoParaCriar = {
             nomeCliente: nomeCliente,
             nomeProjeto: nomeProjeto,
             descricao: descricao,
             status: status,
             dataInicio: startDate,
-            dataFim: endDate
-        }
+            dataFim: endDate,
+            userId: parseInt(user.id, 10), // Garante que userId é um número
+        };
         
-        create(projeto);
-    }
+        create(projetoParaCriar)
+            .then((result) => {
+                console.log("Projeto criado com ID:", result?.insertedRowId); // A função create retorna {insertedRowId}
+                alert('Projeto criado com sucesso!');
+                // Opcional: Limpar os campos do formulário após o sucesso
+                setNomeCliente('');
+                setNomeProjeto('');
+                setDescricao('');
+                setStatus('Em Planejamento');
+                setStartDate(new Date());
+                setEndDate(new Date());
+            })
+            .catch(error => {
+                console.error("Erro ao criar projeto:", error);
+                alert('Erro ao criar projeto. Verifique os logs para mais detalhes.');
+            });
+    };
 
     return (
         <SafeAreaView style={{ flex: 1, padding: 16 }}>
@@ -106,7 +127,7 @@ export default function Projetos() {
                                 />
                             </View>
 
-                            <View>
+                            {/* <View>
                                 <Text style={{ fontSize: 16, marginBottom: 4 }}>Status</Text>
                                 <View style={{ 
                                     backgroundColor: '#FFF',
@@ -124,7 +145,7 @@ export default function Projetos() {
                                         <Picker.Item label="Concluído" value="Concluído" />
                                     </Picker>
                                 </View>
-                            </View>
+                            </View> */}
 
                             <View style={{ gap: 12 }}>
                                 <View>
@@ -167,7 +188,7 @@ export default function Projetos() {
                                     </Pressable>
                                 </View>
 
-                                {showStartPicker && (
+                                {/* {showStartPicker && (
                                     <DateTimePicker
                                         value={startDate}
                                         mode="date"
@@ -196,7 +217,7 @@ export default function Projetos() {
                                         locale="pt-BR"
                                         minimumDate={startDate}
                                     />
-                                )}
+                                )} */}
                             </View>
 
                             <Button 
@@ -210,4 +231,4 @@ export default function Projetos() {
             </View>
         </SafeAreaView>
     );
-} 
+}
