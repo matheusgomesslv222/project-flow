@@ -4,8 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useProjetoDatabase } from '@/database/UseProjetoDatabase';
+import Toast from 'react-native-toast-message';
 
 // Remova a importação de createBottomTabNavigator se não for mais usada diretamente aqui
 // import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -98,7 +98,14 @@ export default function Home() {
     const createProjeto = () => {
         if (!user || !user.id) {
             console.error("Usuário não autenticado ou ID do usuário indisponível para criar projeto.");
-            Alert.alert("Erro: Usuário não autenticado. Não é possível criar o projeto.");
+            Toast.show({
+                type: 'error',
+                text1: 'Erro de Autenticação',
+                text2: 'Usuário não autenticado. Por favor, faça login novamente.',
+                visibilityTime: 3000,
+                autoHide: true,
+            });
+            
             return;
         }
 
@@ -115,7 +122,13 @@ export default function Home() {
         projetoDatabase.create(projetoParaCriar)
             .then((result) => {
                 console.log("Projeto criado com ID:", result?.insertedRowId);
-                Alert.alert('Projeto criado com sucesso!');
+                Toast.show({
+                    type: 'success',
+                    text1: 'Projeto Criado',
+                    text2: 'Seu projeto foi criado com sucesso.',
+                    visibilityTime: 3000,
+                    autoHide: true,
+                })
                 // Limpar os campos do formulário e fechar o modal
                 setNomeCliente('');
                 setNomeProjeto('');
@@ -128,7 +141,13 @@ export default function Home() {
             })
             .catch(error => {
                 console.error("Erro ao criar projeto:", error);
-                Alert.alert('Erro ao criar projeto. Verifique os logs para mais detalhes.');
+                Toast.show({
+                    type: 'error',
+                    text1: 'Erro ao criar projeto',
+                    visibilityTime: 3000,
+                    autoHide: true,
+                });
+                
             });
     };
 

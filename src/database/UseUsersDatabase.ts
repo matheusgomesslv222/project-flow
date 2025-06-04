@@ -50,5 +50,24 @@ export function useUsersDatabase() {
                 console.error(error);
             }
         }
-  return {create , searchUser};
+
+    async function updateUser(id: number, data: Partial<Omit<UserDatabase, "id">>) {
+        const updates = Object.keys(data).map(key => `${key} = $${key}`).join(', ');
+        const params = Object.entries(data).reduce((acc, [key, value]) => ({ ...acc, [`$${key}`]: value }), {});
+
+        const statement = await database.prepareAsync(
+            `UPDATE users SET ${updates} WHERE id = $id;`
+        );
+
+        try {
+            await statement.executeAsync({ ...params, $id: id });
+            return true;
+        } catch (error) {
+            throw error;
+        } finally {
+            await statement.finalizeAsync();
+        }
+    }
+
+  return {create , searchUser, updateUser};
 }

@@ -30,16 +30,17 @@ export default function TabsLayout() {
                     ),
                 }}
             />
-            
             <Tabs.Screen
-                name="tarefas"
+                name="settings"
                 options={{
-                    title: 'Tarefas',
+                    title: 'Configurações',
                     tabBarIcon: ({ color, size }) => (
-                        <MaterialIcons name="assignment" size={size} color={color} />
+                        <MaterialIcons name="settings" size={size} color={color} />
                     ),
                 }}
             />
+            
+            
         </Tabs>
     );
-} 
+}

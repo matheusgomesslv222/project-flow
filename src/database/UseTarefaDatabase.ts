@@ -55,9 +55,22 @@ export function useTarefaDatabase() {
     } finally {
       await statement.finalizeAsync();
     }
-    // A linha abaixo era inalcançável e foi removida.
   }
-  // Outras funções: update, delete, getTarefaById...
 
-  return { create, getTarefasByProjectId /* ...outras funções */ };
+  async function getAllTarefas() {
+    const statement = await database.prepareAsync("SELECT * FROM tarefas ORDER BY id DESC");
+    try {
+      const result = await statement.executeAsync();
+      const tarefas = await result.getAllAsync();
+      console.log("Todas as tarefas encontradas:", tarefas);
+      return tarefas as Tarefa[];
+    } catch (error) {
+      console.error("Erro ao buscar todas as tarefas:", error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  return { create, getTarefasByProjectId, getAllTarefas /* ...outras funções */ };
 }
