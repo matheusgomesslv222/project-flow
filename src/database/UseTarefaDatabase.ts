@@ -71,6 +71,57 @@ export function useTarefaDatabase() {
       await statement.finalizeAsync();
     }
   }
+  async function deleteTask(id: number) {
+    console.log('TASK:', id)
+    const statement = await database.prepareAsync("DELETE FROM tarefas WHERE id = $id");
+    try {
+      const result = await statement.executeAsync({ $id: id });
+      console.log(`Tarefa com ID ${id} deletada com sucesso.`);
+      return result;
+    }catch (error) {
+      console.error(`Erro ao deletar tarefa com ID ${id}:`, error);
+      throw error;
+    }
+  }
 
-  return { create, getTarefasByProjectId, getAllTarefas /* ...outras funções */ };
+  async function editTask(nomeTarefa: string, descricao: string, id: number) {
+    const statement = await database.prepareAsync(
+      "UPDATE tarefas SET nomeTarefa = $nomeTarefa, descricao = $descricao WHERE id = $id"
+    );
+    try {
+      const result = await statement.executeAsync({
+        $nomeTarefa: nomeTarefa,
+        $descricao: descricao,
+        $id: id
+      });
+      console.log(`Tarefa com ID ${id} atualizada com sucesso.`);
+      return result;
+    } catch (error) {
+      console.error(`Erro ao atualizar tarefa com ID ${id}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  async function updateTaskStatus(id: number, status: string) {
+    const statement = await database.prepareAsync(
+      "UPDATE tarefas SET status = $status WHERE id = $id"
+    );
+    try {
+      const result = await statement.executeAsync({
+        $status: status,
+        $id: id
+      });
+      console.log(`Status da tarefa ${id} atualizado para ${status}.`);
+      return result;
+    } catch (error) {
+      console.error(`Erro ao atualizar status da tarefa ${id}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  return { create, getTarefasByProjectId, getAllTarefas, deleteTask, editTask, updateTaskStatus };
 }

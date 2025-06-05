@@ -82,5 +82,86 @@ export function useProjetoDatabase() {
         }
     }
 
-  return {create, getProjetosByUserId, getProjetoById }; // Adicione a nova função
+  async function deleteProject(id: number) {
+    const statement = await database.prepareAsync("DELETE FROM projetos WHERE id = $id");
+    try {
+      const result = await statement.executeAsync({ $id: id });
+      deleteProjectTasks(id)
+      console.log(`Projeto com ID ${id} deletado com sucesso.`);
+      return result;
+    } catch (error) {
+      console.error(`Erro ao deletar projeto com ID ${id}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  async function deleteProjectTasks(projectId: number) {
+    const statement = await database.prepareAsync(
+      "DELETE FROM tarefas WHERE projetoId = $projectId"
+    );
+    try {
+      const result = await statement.executeAsync({ $projectId: projectId });
+      console.log(`All tasks for project ID ${projectId} deleted successfully.`);
+      return result;
+    } catch (error) {
+      console.error(`Error deleting tasks for project ID ${projectId}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  async function editProject(id: number, data: Partial<Omit<ProjetoDatabase, 'id' | 'userId'>>) {
+    const updateFields = Object.keys(data)
+      .map(key => `${key} = $${key}`)
+      .join(', ');
+
+    const statement = await database.prepareAsync(
+      `UPDATE projetos SET ${updateFields} WHERE id = $id`
+    );
+
+    try {
+      const params = {
+        ...Object.fromEntries(
+          Object.entries(data).map(([key, value]) => [
+            `$${key}`,
+            key.includes('data') ? (value instanceof Date ? value.toISOString() : value) : value
+          ])
+        ),
+        $id: id
+      };
+
+      const result = await statement.executeAsync(params);
+      console.log(`Projeto com ID ${id} atualizado com sucesso.`);
+      return result;
+    } catch (error) {
+      console.error(`Erro ao atualizar projeto com ID ${id}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  async function updateProjectStatus(id: number, status: string) {
+    const statement = await database.prepareAsync(
+      "UPDATE projetos SET status = $status WHERE id = $id"
+    );
+    try {
+      const result = await statement.executeAsync({
+        $status: status,
+        $id: id
+      });
+      console.log(`Status do projeto ${id} atualizado para ${status}.`);
+      return result;
+    } catch (error) {
+      console.error(`Erro ao atualizar status do projeto ${id}:`, error);
+      throw error;
+    } finally {
+      await statement.finalizeAsync();
+    }
+  }
+
+  return { create, getProjetosByUserId, getProjetoById, deleteProject, editProject, updateProjectStatus }; // Adicione a nova função
 }

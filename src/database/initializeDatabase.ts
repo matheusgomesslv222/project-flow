@@ -10,7 +10,6 @@ export async function initializeDatabase(database: SQLiteDatabase) {
             password TEXT NOT NULL
         );
 
-        DROP TABLE IF EXISTS projetos;
         CREATE TABLE IF NOT EXISTS projetos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             userId INTEGER NOT NULL,
@@ -23,7 +22,6 @@ export async function initializeDatabase(database: SQLiteDatabase) {
             FOREIGN KEY (userId) REFERENCES users(id)
         );
         
-        DROP TABLE IF EXISTS tarefas;
         CREATE TABLE IF NOT EXISTS tarefas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             projetoId INTEGER NOT NULL,

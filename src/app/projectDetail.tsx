@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, FlatList, TouchableOpacity, Modal, TextInput, Button, Alert, Pressable } from 'react-native'; // Adicionado Modal, TextInput, Button, Alert, Pressable
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, FlatList, TouchableOpacity, Modal, TextInput, Pressable } from 'react-native'; // Adicionado Modal, TextInput, Button, Alert, Pressable
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProjetoDatabase, ProjetoDatabase as Projeto } from '@/database/UseProjetoDatabase';
 // Importar o hook de tarefas e o tipo Tarefa (assumindo que você criará/terá este arquivo)
 import { useTarefaDatabase, Tarefa as Tarefas } from '@/database/UseTarefaDatabase'; // Descomente e ajuste o caminho se necessário
+import Toast from 'react-native-toast-message';
 
 // Interface Tarefa (mantenha ou mova para um arquivo de tipos compartilhado)
 interface Tarefa {
@@ -28,12 +29,13 @@ export default function ProjectDetailScreen() {
   const [loading, setLoading] = useState(true);
 
   const { getProjetoById } = useProjetoDatabase();
-  const { create: create, getTarefasByProjectId } = useTarefaDatabase(); // Obter funções do hook de tarefas
+  const { create: create, getTarefasByProjectId, deleteTask, editTask, updateTaskStatus} = useTarefaDatabase(); // Obter funções do hook de tarefas
 
   // Estados para o modal de nova tarefa
   const [taskModalVisible, setTaskModalVisible] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [newTaskDescription, setNewTaskDescription] = useState('');
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDescription, setTaskDescription] = useState('');
+  const [editTaskId, setEditTaskId] = useState<number | null>(null); // Estado para o ID da tarefa sendo editada
   // Poderia adicionar estado para status e responsável se necessário no formulário
 
   useEffect(() => {
@@ -96,23 +98,28 @@ export default function ProjectDetailScreen() {
   };
 
   const handleCreateTask = async () => {
-    if (!projectId || !newTaskTitle.trim()) {
-      Alert.alert("Erro", "O título da tarefa é obrigatório.");
+    if (!projectId || !taskTitle.trim()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'O título da tarefa é obrigatório.',
+        position: 'top',
+      })
       return;
     }
 
     try {
       const newTaskData: Omit<Tarefa, 'id'> = {
         projetoId: projectId,
-        titulo: newTaskTitle.trim(),
-        descricao: newTaskDescription.trim(),
+        titulo: taskTitle.trim(),
+        descricao: taskDescription.trim(),
         status: 'pendente', // Status padrão para nova tarefa
         // responsavel: 'Quem for atribuído', // Adicionar campo se necessário
       };
       
       const result = await create({
-        nomeTarefa: newTaskTitle.trim(),
-        descricao: newTaskDescription.trim(),
+        nomeTarefa: taskTitle.trim(),
+        descricao: taskDescription.trim(),
         status: 'pendente',
         dataInicio: new Date().toISOString(),
         dataFim: new Date().toISOString(), 
@@ -120,19 +127,106 @@ export default function ProjectDetailScreen() {
       });
       console.log("Resultado da criação da tarefa:", result);
       if (result !== undefined) {
-        Alert.alert("Sucesso", "Tarefa criada com sucesso!");
-        setNewTaskTitle('');
-        setNewTaskDescription('');
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Tarefa criada com sucesso!',
+          position: 'top',
+        })
+        setTaskTitle('');
+        setTaskDescription('');
         setTaskModalVisible(false);
         loadTasks(); // Recarregar a lista de tarefas
       } else {
-        Alert.alert("Erro", "Não foi possível criar a tarefa. Verifique os logs.");
+        Toast.show({
+          type:'error',
+          text1: 'Erro',
+          text2: 'Não foi possível criar a tarefa.',
+          position: 'top',
+        })
       }
     } catch (error) {
       console.error("Erro ao criar tarefa:", error);
-      Alert.alert("Erro", "Ocorreu um erro ao criar a tarefa.");
+      Toast.show({
+        type:'error',
+        text1: 'Erro',
+        text2: 'Não foi possível criar a tarefa.',
+        position: 'top',
+      })
     }
   };
+
+  const handleOpenModalEditTask = async (task: Tarefa) => {
+    setEditTaskId(task.id)
+    setTaskModalVisible(!taskModalVisible);
+    setTaskTitle(task.titulo);
+    setTaskDescription(task.descricao);
+  
+  }
+  const handDelTask = async (id: number) => {
+    try {
+      const result = await deleteTask(id);
+      if(result) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Tarefa excluída com sucesso!',
+          position: 'top',
+        });
+        loadTasks();
+      }
+    } catch (error) {
+      console.error('Erro ao excluir tarefa:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível excluir a tarefa.',
+        position: 'top',
+      });
+    }
+  }
+
+  const handleEditTask = async () => {
+    try{
+      const result = await editTask(taskTitle, taskDescription, editTaskId!);
+      if (result){
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Tarefa editada com sucesso!',
+          position: 'top',
+        })
+        clearInputs();
+        loadTasks();
+      }
+    }catch (error){
+      console.error('Erro ao editar tarefa:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível editar a tarefa.',
+        position: 'top',
+      });
+
+    }
+  }
+
+  const editOrCreateTask = async () => {
+    if (editTaskId){
+      // Editar a tarefa existente
+      handleEditTask();
+    } else{
+      handleCreateTask()
+    }
+
+  }
+
+  const clearInputs = () => {
+    setTaskModalVisible(false);
+    setTaskTitle('');
+    setTaskDescription('');
+    setEditTaskId(null);
+  }
 
   const formatDate = (date: Date | string | undefined) => {
     if (!date) return 'N/A';
@@ -160,13 +254,89 @@ export default function ProjectDetailScreen() {
     );
   }
 
+  const handleAdvanceStatus = async (item: Tarefa) => {
+    const statusFlow = {
+      pendente: 'em_andamento',
+      em_andamento: 'concluido',
+      concluido: 'concluido'
+    };
+
+    const nextStatus = statusFlow[item.status as keyof typeof statusFlow];
+
+    try {
+      const result = await updateTaskStatus(item.id, nextStatus);
+      if (result) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Status da tarefa atualizado com sucesso!',
+          position: 'top',
+        });
+        loadTasks();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar status da tarefa:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível atualizar o status da tarefa.',
+        position: 'top',
+      });
+    }
+  };
+
   const renderTaskItem = ({ item }: { item: Tarefa }) => (
     <View style={styles.taskCard}>
-      <Text style={styles.taskTitle}>{item.titulo}</Text>
-      <Text style={styles.taskDescription}>{item.descricao}</Text>
-      {item.responsavel && <Text style={styles.taskInfo}>Responsável: {item.responsavel}</Text>}
-      <View style={[styles.taskStatusBadge, styles[`status_${item.status}`]]}>
-        <Text style={styles.taskStatusText}>{item.status.replace('_', ' ').toUpperCase()}</Text>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.taskTitle}>{item.titulo}</Text>
+        <Text style={styles.taskDescription}>{item.descricao}</Text>
+        {item.responsavel && <Text style={styles.taskInfo}>Responsável: {item.responsavel}</Text>}
+        <View style={[styles.taskStatusBadge, styles[`status_${item.status}`]]}>
+          <Text style={styles.taskStatusText}>{item.status.replace('_', ' ').toUpperCase()}</Text>
+        </View>
+      </View>
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+        <TouchableOpacity 
+          onPress={() => handleOpenModalEditTask(item)}
+          style={{
+            backgroundColor: '#4169E1',
+            padding: 8,
+            borderRadius: 6,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}
+        >
+          <MaterialIcons name="edit" size={16} color="#FFF" />
+          <Text style={{ color: '#FFF', marginLeft: 4 }}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          onPress={() => handDelTask(item.id)}
+          style={{
+            backgroundColor: '#FF4444',
+            padding: 8,
+            borderRadius: 6,
+            flexDirection: 'row',
+            alignItems: 'center'
+          }}
+        >
+          <MaterialIcons name="delete" size={16} color="#FFF" />
+          <Text style={{ color: '#FFF', marginLeft: 4 }}>Excluir</Text>
+        </TouchableOpacity>
+        {item.status !== 'concluido' && (
+          <TouchableOpacity 
+            onPress={() => handleAdvanceStatus(item)}
+            style={{
+              backgroundColor: '#32CD32' ,
+              padding: 8,
+              borderRadius: 6,
+              flexDirection: 'row',
+              alignItems: 'center'
+            }}
+          >
+            <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+            <Text style={{ color: '#FFF', marginLeft: 4 }}>{item.status === 'pendente' ? 'Iniciar' : 'Concluir'}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -191,11 +361,12 @@ export default function ProjectDetailScreen() {
         </View>
 
         <View style={styles.card}>
-          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15}}>
-            <Text style={styles.cardTitle}>Tarefas Pendentes ({pendingTasks.length})</Text>
+          <View style={{flexDirection: 'row', justifyContent: 'space-between', alignContent: 'center',marginBottom:20, gap:20}}>
+            <Text style={styles.cardTitle}>Tarefas ({pendingTasks.length})</Text>
             <TouchableOpacity 
               style={{
                 flexDirection: 'row',
+                justifyContent: 'center',
                 alignItems: 'center',
                 backgroundColor: '#4169E1',
                 paddingVertical: 8,
@@ -208,9 +379,9 @@ export default function ProjectDetailScreen() {
               <Text style={{color: '#FFF', marginLeft: 4}}>Nova Tarefa</Text>
             </TouchableOpacity>
           </View>
-          {pendingTasks.length > 0 ? (
+          {tasks.length > 0 ? (
             <FlatList
-              data={pendingTasks}
+              data={tasks}
               renderItem={renderTaskItem}
               keyExtractor={(item) => item.id.toString()}
               scrollEnabled={false} 
@@ -228,8 +399,9 @@ export default function ProjectDetailScreen() {
           onRequestClose={() => {
             setTaskModalVisible(!taskModalVisible);
             // Limpar campos ao fechar se desejar
-            setNewTaskTitle('');
-            setNewTaskDescription('');
+            setTaskTitle('');
+            setTaskDescription('');
+            setEditTaskId(null);
           }}
         >
           <Pressable 
@@ -239,7 +411,7 @@ export default function ProjectDetailScreen() {
               justifyContent: 'center',
               alignItems: 'center'
             }} 
-            onPress={() => setTaskModalVisible(false)}
+            onPress={() => clearInputs()}
           >
             <Pressable 
               style={{
@@ -270,8 +442,8 @@ export default function ProjectDetailScreen() {
                       marginBottom: 15
                     }}
                     placeholder="Título da Tarefa"
-                    value={newTaskTitle}
-                    onChangeText={setNewTaskTitle}
+                    value={taskTitle}
+                    onChangeText={setTaskTitle}
                 />
                 <TextInput
                     style={[{ 
@@ -285,8 +457,8 @@ export default function ProjectDetailScreen() {
                       textAlignVertical: 'top' 
                     }]}
                     placeholder="Descrição (opcional)"
-                    value={newTaskDescription}
-                    onChangeText={setNewTaskDescription}
+                    value={taskDescription}
+                    onChangeText={setTaskDescription}
                     multiline
                     numberOfLines={3}
                 />
@@ -296,17 +468,18 @@ export default function ProjectDetailScreen() {
                         style={{backgroundColor: '#EEE', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8}}
                         onPress={() => {
                             setTaskModalVisible(false);
-                            setNewTaskTitle('');
-                            setNewTaskDescription('');
+                            setTaskTitle('');
+                            setTaskDescription('');
+                            setEditTaskId(null)
                         }}
                     >
                         <Text style={{color: '#666', fontSize: 16}}>Cancelar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={{backgroundColor: '#4169E1', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8}}
-                        onPress={handleCreateTask}
+                        onPress={editOrCreateTask}
                     >
-                        <Text style={{color: '#FFF', fontSize: 16}}>Salvar Tarefa</Text>
+                        <Text style={{color: '#FFF', fontSize: 16}}>{editTaskId !== null ? 'Editar Tarefa' : 'Salvar Tarefa'}</Text>
                     </TouchableOpacity>
                 </View>
             </Pressable>
@@ -391,6 +564,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#EEE',
     paddingBottom: 10,
+    textAlign: 'center',
+    flex:1,
+    alignContent: 'center',
+    justifyContent: 'center',
+    
   },
   infoRow: {
     flexDirection: 'row',

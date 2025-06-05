@@ -37,6 +37,7 @@ export default function Home() {
     const [endDate, setEndDate] = useState(new Date());
     const [showStartPicker, setShowStartPicker] = useState(false); // Se for usar DateTimePicker
     const [showEndPicker, setShowEndPicker] = useState(false);   // Se for usar DateTimePicker
+    const [editProjectId, setEditProjectId] = useState<number | null>(null); // Para editar projetos
 
     useEffect(() => {
         if (!user) {
@@ -133,7 +134,7 @@ export default function Home() {
                 setNomeCliente('');
                 setNomeProjeto('');
                 setDescricao('');
-                setStatus('Em Planejamento');
+                setStatus('f');
                 setStartDate(new Date());
                 setEndDate(new Date());
                 setModalVisible(false);
@@ -151,6 +152,37 @@ export default function Home() {
             });
     };
 
+    const handleAdvanceStatus = async (item: Projeto) => {
+        const statusFlow = {
+            'Em Planejamento': 'Em Andamento',
+            'Em Andamento': 'Concluído',
+            'Concluído': 'Concluído'
+        };
+
+        const nextStatus = statusFlow[item.status as keyof typeof statusFlow];
+
+        try {
+            const result = await projetoDatabase.updateProjectStatus(item.id, nextStatus);
+            if (result) {
+                Toast.show({
+                    type: 'success',
+                    text1: 'Sucesso',
+                    text2: 'Status do projeto atualizado com sucesso!',
+                    position: 'top',
+                });
+                loadProjetos();
+            }
+        } catch (error) {
+            console.error('Erro ao atualizar status do projeto:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Erro',
+                text2: 'Não foi possível atualizar o status do projeto.',
+                position: 'top',
+            });
+        }
+    };
+
     const renderProjetoItem = ({ item }: { item: Projeto }) => {
         let statusColor = '#FFD700'; // Cor padrão para 'Em Planejamento'
         if (item.status === 'Em Andamento') {
@@ -158,10 +190,9 @@ export default function Home() {
         } else if (item.status === 'Concluído') {
             statusColor = '#32CD32';
         }
-        // Se houver outros status, você pode adicionar mais condições 'else if' aqui
 
         return (
-            <TouchableOpacity
+            <View
                 style={{
                     backgroundColor: '#FFF',
                     padding: 15,
@@ -175,28 +206,159 @@ export default function Home() {
                     borderLeftWidth: 4,
                     borderLeftColor: statusColor,
                 }}
-                onPress={() => router.push({ pathname: "/projectDetail", params: { projectId: item.id.toString() } })}
             >
-                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5 }}>
-                    {item.nomeProjeto}
-                </Text>
-                <Text style={{ fontSize: 14, color: '#666', marginBottom: 3 }}>
-                    Cliente: {item.nomeCliente}
-                </Text>
-                <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-                    Status: {item.status}
-                </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 12, color: '#888' }}>
-                        Início: {formatDate(item.dataInicio)}
+                <TouchableOpacity
+                    onPress={() => router.push({ pathname: "/projectDetail", params: { projectId: item.id.toString() } })}
+                    style={{ marginBottom: 10 }}
+                >
+                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5 }}>
+                        {item.nomeProjeto}
                     </Text>
-                    <Text style={{ fontSize: 12, color: '#888' }}>
-                        Fim: {formatDate(item.dataFim)}
+                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 3 }}>
+                        Cliente: {item.nomeCliente}
                     </Text>
+                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
+                        Status: {item.status}
+                    </Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Text style={{ fontSize: 12, color: '#888' }}>
+                            Início: {formatDate(item.dataInicio)}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: '#888' }}>
+                            Fim: {formatDate(item.dataFim)}
+                        </Text>
+                    </View>
+                </TouchableOpacity>
+
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
+                    <TouchableOpacity 
+                        onPress={() => handleOpenModalEditProject(item)}
+                        style={{
+                            backgroundColor: '#4169E1',
+                            padding: 8,
+                            borderRadius: 6,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <MaterialIcons name="edit" size={16} color="#FFF" />
+                        <Text style={{ color: '#FFF', marginLeft: 4 }}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => handDelProject(item.id)}
+                        style={{
+                            backgroundColor: '#FF4444',
+                            padding: 8,
+                            borderRadius: 6,
+                            flexDirection: 'row',
+                            alignItems: 'center'
+                        }}
+                    >
+                        <MaterialIcons name="delete" size={16} color="#FFF" />
+                        <Text style={{ color: '#FFF', marginLeft: 4 }}>Excluir</Text>
+                    </TouchableOpacity>
+                    {item.status !== 'Concluído' && (
+                        <TouchableOpacity 
+                            onPress={() => handleAdvanceStatus(item)}
+                            style={{
+                                backgroundColor: '#32CD32',
+                                padding: 8,
+                                borderRadius: 6,
+                                flexDirection: 'row',
+                                alignItems: 'center'
+                            }}
+                        >
+                            <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
+                            <Text style={{ color: '#FFF', marginLeft: 4 }}>Avançar</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
-            </TouchableOpacity>
+            </View>
         );
     };
+
+    const handDelProject = async (projectId: number) => {
+        try {
+            await projetoDatabase.deleteProject(projectId);
+            loadProjetos();
+            Toast.show({
+                type: 'success',
+                text1: 'Projeto Excluído',
+                text2: 'Seu projeto foi excluído com sucesso.',
+                visibilityTime: 3000,
+                autoHide: true,
+            });
+        } catch (error){
+            console.error('Erro ao excluir projeto:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Erro ao excluir projeto',
+                visibilityTime: 3000,
+                autoHide: true,
+            });
+        }
+    }
+
+    const handleEditProject = async (projectId: number) => {
+        try {
+            const projetoParaEditar = {
+                nomeCliente: nomeCliente,
+                nomeProjeto: nomeProjeto,
+                descricao: descricao,
+                dataInicio: startDate,
+                dataFim: endDate,
+            };
+            await projetoDatabase.editProject(projectId, projetoParaEditar);
+            clearInputs();
+            loadProjetos();
+            Toast.show({
+                type:'success',
+                text1: 'Projeto Editado',
+                text2: 'Seu projeto foi editado com sucesso.',
+                visibilityTime: 3000,
+                autoHide: true,
+            });
+        } catch (error) {
+            console.error('Erro ao editar projeto:', error);
+            Toast.show({
+                type: 'error',
+                text1: 'Erro ao editar projeto',
+                visibilityTime: 3000,
+                autoHide: true,
+            });
+        }
+
+    }
+
+    const handleOpenModalEditProject = (project: Projeto) => {
+        setNomeCliente(project.nomeCliente);
+        setNomeProjeto(project.nomeProjeto);
+        setDescricao(project.descricao);
+        setStatus(project.status);
+        setStartDate(project.dataInicio);
+        setEndDate(project.dataFim);
+        setEditProjectId(project.id);
+        setModalVisible(true);
+    };
+
+    const editOrCreate = () => {
+        if(editProjectId){
+            handleEditProject(editProjectId);
+        } else {
+            createProjeto();
+        }
+    }
+
+    const clearInputs = () => {
+        setEditProjectId(null)
+        setNomeCliente('');
+        setNomeProjeto('');
+        setDescricao('');
+        setStatus('f');
+        setStartDate(new Date());
+        setEndDate(new Date());
+        setModalVisible(false);
+    }
 
     if (!user) return null;
 
@@ -271,7 +433,7 @@ export default function Home() {
                             <Text style={{ marginLeft: 8, color: '#666', fontSize: 14 }}>Em Planejamento</Text>
                         </View>
                         <Text style={{ fontSize: 28, fontWeight: 'bold', color: '#333' }}>
-                            {countProjetosPorStatus('planejamento')}
+                            {countProjetosPorStatus('Em Planejamento')}
                         </Text>
                     </View>
 
@@ -359,80 +521,83 @@ export default function Home() {
             </ScrollView>
 
             {/* Modal de Novo Projeto (código existente do modal, permanece fora do ScrollView) */}
-            <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-                <Pressable style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={() => setModalVisible(false)}></Pressable>
-                <Pressable style={{ backgroundColor: 'white', borderRadius: 12, padding: 25, width: '90%', maxHeight: '85%', elevation: 5 }} onPress={(e) => e.stopPropagation()}>
-                    <ScrollView showsVerticalScrollIndicator={false}>
-                        <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 20, color: '#333', textAlign: 'center' }}>Criar Novo Projeto</Text>
-                        
-                        {/* Campos do formulário (Nome Cliente, Nome Projeto, Descrição, Datas) */}
-                        {/* ... (código dos inputs e pickers de data inalterado) ... */}
-                        <View style={{ marginBottom: 15 }}>
-                            <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Nome do Cliente</Text>
-                            <TextInput
-                                style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#F8F9FA' }}
-                                placeholder="Digite o nome do cliente"
-                                value={nomeCliente}
-                                onChangeText={setNomeCliente}
-                            />
-                        </View>
-
-                        <View style={{ marginBottom: 15 }}>
-                            <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Nome do Projeto</Text>
-                            <TextInput
-                                style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#F8F9FA' }}
-                                placeholder="Digite o nome do projeto"
-                                value={nomeProjeto}
-                                onChangeText={setNomeProjeto}
-                            />
-                        </View>
-
-                        <View style={{ marginBottom: 15 }}>
-                            <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Descrição</Text>
-                            <TextInput
-                                style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, minHeight: 100, textAlignVertical: 'top', backgroundColor: '#F8F9FA' }}
-                                placeholder="Descreva o projeto"
-                                value={descricao}
-                                onChangeText={setDescricao}
-                                multiline
-                            />
-                        </View>
-                        
-                        {/* Datas (simplificado para o exemplo, mantenha seu DateTimePicker se estiver usando) */}
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-                            <View style={{ flex: 1, marginRight: 5 }}>
-                                <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Data Início</Text>
-                                <Pressable onPress={() => setShowStartPicker(true)} style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, backgroundColor: '#F8F9FA' }}>
-                                    <Text style={{ fontSize: 16 }}>{formatDate(startDate)}</Text>
-                                </Pressable>
+            <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => clearInputs()}>
+                <Pressable style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)' }} onPress={() => clearInputs()}>
+                    <Pressable style={{backgroundColor: 'white', borderRadius: 12, padding: 25, width:'90%', maxHeight: '85%', elevation: 5}} onPress={(e) => e.stopPropagation()}>
+                        <ScrollView showsVerticalScrollIndicator={false}>
+                            <Text style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 20, color: '#333', textAlign: 'center' }}>Criar Novo Projeto</Text>
+                            
+                            {/* Campos do formulário (Nome Cliente, Nome Projeto, Descrição, Datas) */}
+                            {/* ... (código dos inputs e pickers de data inalterado) ... */}
+                            <View style={{ marginBottom: 15 }}>
+                                <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Nome do Cliente</Text>
+                                <TextInput
+                                    style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#F8F9FA' }}
+                                    placeholder="Digite o nome do cliente"
+                                    value={nomeCliente}
+                                    onChangeText={setNomeCliente}
+                                />
                             </View>
-                            <View style={{ flex: 1, marginLeft: 5 }}>
-                                <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Data Fim</Text>
-                                <Pressable onPress={() => setShowEndPicker(true)} style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, backgroundColor: '#F8F9FA' }}>
-                                    <Text style={{ fontSize: 16 }}>{formatDate(endDate)}</Text>
-                                </Pressable>
+
+                            <View style={{ marginBottom: 15 }}>
+                                <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Nome do Projeto</Text>
+                                <TextInput
+                                    style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, backgroundColor: '#F8F9FA' }}
+                                    placeholder="Digite o nome do projeto"
+                                    value={nomeProjeto}
+                                    onChangeText={setNomeProjeto}
+                                />
                             </View>
-                        </View>
 
-                        {/* Seus DatePickers (showStartPicker, showEndPicker) aqui */}
-                        {/* ... */}
+                            <View style={{ marginBottom: 15 }}>
+                                <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Descrição</Text>
+                                <TextInput
+                                    style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, fontSize: 16, minHeight: 100, textAlignVertical: 'top', backgroundColor: '#F8F9FA' }}
+                                    placeholder="Descreva o projeto"
+                                    value={descricao}
+                                    onChangeText={setDescricao}
+                                    multiline
+                                />
+                            </View>
+                            
+                            {/* Datas (simplificado para o exemplo, mantenha seu DateTimePicker se estiver usando) */}
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                                <View style={{ flex: 1, marginRight: 5 }}>
+                                    <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Data Início</Text>
+                                    <Pressable onPress={() => setShowStartPicker(true)} style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, backgroundColor: '#F8F9FA' }}>
+                                        <Text style={{ fontSize: 16 }}>{formatDate(startDate)}</Text>
+                                    </Pressable>
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 5 }}>
+                                    <Text style={{ fontSize: 16, marginBottom: 5, color: '#555' }}>Data Fim</Text>
+                                    <Pressable onPress={() => setShowEndPicker(true)} style={{ borderWidth: 1, borderColor: '#DDD', borderRadius: 8, padding: 12, backgroundColor: '#F8F9FA' }}>
+                                        <Text style={{ fontSize: 16 }}>{formatDate(endDate)}</Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            {/* Seus DatePickers (showStartPicker, showEndPicker) aqui */}
+                            {/* ... */}
 
 
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 25 }}>
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#6c757d', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 }}
-                                onPress={() => setModalVisible(false)}
-                            >
-                                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Cancelar</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={{ backgroundColor: '#4169E1', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 }}
-                                onPress={createProjeto}
-                            >
-                                <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Salvar Projeto</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
+                            <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 25 }}>
+                                <TouchableOpacity
+                                    style={{ backgroundColor: '#6c757d', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 }}
+                                    onPress={() => clearInputs()}
+                                >
+                                    <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>Cancelar</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{ backgroundColor: '#4169E1', paddingVertical: 12, paddingHorizontal: 30, borderRadius: 8 }}
+                                    onPress={editOrCreate}
+                                >
+                                    <Text style={{ color: 'white', fontSize: 16, fontWeight: 'bold' }}>
+                                        {editProjectId !== null ? 'Editar Projeto' : 'Salvar Projeto'}
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </ScrollView>
+                    </Pressable>
                 </Pressable>
             </Modal>
         </SafeAreaView>
