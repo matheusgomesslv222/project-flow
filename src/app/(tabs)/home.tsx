@@ -152,37 +152,6 @@ export default function Home() {
             });
     };
 
-    const handleAdvanceStatus = async (item: Projeto) => {
-        const statusFlow = {
-            'Em Planejamento': 'Em Andamento',
-            'Em Andamento': 'Concluído',
-            'Concluído': 'Concluído'
-        };
-
-        const nextStatus = statusFlow[item.status as keyof typeof statusFlow];
-
-        try {
-            const result = await projetoDatabase.updateProjectStatus(item.id, nextStatus);
-            if (result) {
-                Toast.show({
-                    type: 'success',
-                    text1: 'Sucesso',
-                    text2: 'Status do projeto atualizado com sucesso!',
-                    position: 'top',
-                });
-                loadProjetos();
-            }
-        } catch (error) {
-            console.error('Erro ao atualizar status do projeto:', error);
-            Toast.show({
-                type: 'error',
-                text1: 'Erro',
-                text2: 'Não foi possível atualizar o status do projeto.',
-                position: 'top',
-            });
-        }
-    };
-
     const renderProjetoItem = ({ item }: { item: Projeto }) => {
         let statusColor = '#FFD700'; // Cor padrão para 'Em Planejamento'
         if (item.status === 'Em Andamento') {
@@ -190,9 +159,10 @@ export default function Home() {
         } else if (item.status === 'Concluído') {
             statusColor = '#32CD32';
         }
+        // Se houver outros status, você pode adicionar mais condições 'else if' aqui
 
         return (
-            <View
+            <TouchableOpacity
                 style={{
                     backgroundColor: '#FFF',
                     padding: 15,
@@ -206,74 +176,54 @@ export default function Home() {
                     borderLeftWidth: 4,
                     borderLeftColor: statusColor,
                 }}
+                onPress={() => router.push({ pathname: "/projectDetail", params: { projectId: item.id.toString() } })}
             >
-                <TouchableOpacity
-                    onPress={() => router.push({ pathname: "/projectDetail", params: { projectId: item.id.toString() } })}
-                    style={{ marginBottom: 10 }}
-                >
-                    <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5 }}>
-                        {item.nomeProjeto}
+                <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 5 }}>
+                    {item.nomeProjeto}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#666', marginBottom: 3 }}>
+                    Cliente: {item.nomeCliente}
+                </Text>
+                <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
+                    Status: {item.status}
+                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 12, color: '#888' }}>
+                        Início: {formatDate(item.dataInicio)}
                     </Text>
-                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 3 }}>
-                        Cliente: {item.nomeCliente}
+                    <Text style={{ fontSize: 12, color: '#888' }}>
+                        Fim: {formatDate(item.dataFim)}
                     </Text>
-                    <Text style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>
-                        Status: {item.status}
-                    </Text>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Text style={{ fontSize: 12, color: '#888' }}>
-                            Início: {formatDate(item.dataInicio)}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: '#888' }}>
-                            Fim: {formatDate(item.dataFim)}
-                        </Text>
-                    </View>
-                </TouchableOpacity>
-
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 10 }}>
-                    <TouchableOpacity 
-                        onPress={() => handleOpenModalEditProject(item)}
-                        style={{
-                            backgroundColor: '#4169E1',
-                            padding: 8,
-                            borderRadius: 6,
-                            flexDirection: 'row',
-                            alignItems: 'center'
-                        }}
-                    >
-                        <MaterialIcons name="edit" size={16} color="#FFF" />
-                        <Text style={{ color: '#FFF', marginLeft: 4 }}>Editar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        onPress={() => handDelProject(item.id)}
-                        style={{
-                            backgroundColor: '#FF4444',
-                            padding: 8,
-                            borderRadius: 6,
-                            flexDirection: 'row',
-                            alignItems: 'center'
-                        }}
-                    >
-                        <MaterialIcons name="delete" size={16} color="#FFF" />
-                        <Text style={{ color: '#FFF', marginLeft: 4 }}>Excluir</Text>
-                    </TouchableOpacity>
-                    {item.status !== 'Concluído' && (
-                        <TouchableOpacity 
-                            onPress={() => handleAdvanceStatus(item)}
-                            style={{
-                                backgroundColor: '#32CD32',
-                                padding: 8,
-                                borderRadius: 6,
-                                flexDirection: 'row',
-                                alignItems: 'center'
-                            }}
-                        >
-                            <MaterialIcons name="arrow-forward" size={16} color="#FFF" />
-                            <Text style={{ color: '#FFF', marginLeft: 4 }}>Avançar</Text>
-                        </TouchableOpacity>
-                    )}
                 </View>
-            </View>
+                <View style={{ flexDirection: 'row', gap: 10, marginTop: 25 }}>
+                    <TouchableOpacity 
+                    onPress={() => handleOpenModalEditProject(item)}
+                    style={{
+                        backgroundColor: '#4169E1',
+                        padding: 8,
+                        borderRadius: 6,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}
+                    >
+                    <MaterialIcons name="edit" size={16} color="#FFF" />
+                    <Text style={{ color: '#FFF', marginLeft: 4 }}>Editar</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                    onPress={() => handDelProject(item.id)}
+                    style={{
+                        backgroundColor: '#FF4444',
+                        padding: 8,
+                        borderRadius: 6,
+                        flexDirection: 'row',
+                        alignItems: 'center'
+                    }}
+                    >
+                    <MaterialIcons name="delete" size={16} color="#FFF" />
+                    <Text style={{ color: '#FFF', marginLeft: 4 }}>Excluir</Text>
+                    </TouchableOpacity>
+                </View>
+            </TouchableOpacity>
         );
     };
 

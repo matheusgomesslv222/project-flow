@@ -69,5 +69,21 @@ export function useUsersDatabase() {
         }
     }
 
-  return {create , searchUser, updateUser};
+    async function updateProfile(id: any, name:string, email:string) {
+        const statement = await database.prepareAsync(
+            `UPDATE users SET name = $name, email = $email WHERE id = $id;`
+        );
+
+        try {
+            await statement.executeAsync({$name: name, $email: email, $id: id });
+            return true;
+
+        } catch (error) {
+            throw error;
+        } finally {
+            await statement.finalizeAsync();
+        }
+    }
+
+  return {create , searchUser, updateUser,updateProfile};
 }
