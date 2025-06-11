@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useProjetoDatabase } from '@/database/UseProjetoDatabase';
 import Toast from 'react-native-toast-message';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 // Remova a importação de createBottomTabNavigator se não for mais usada diretamente aqui
 // import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -528,6 +529,35 @@ export default function Home() {
 
                             {/* Seus DatePickers (showStartPicker, showEndPicker) aqui */}
                             {/* ... */}
+                            {showStartPicker && (
+                            <DateTimePicker
+                                value={startDate}
+                                mode="date"
+                                display="default"
+                                onChange={(event, selectedDate) => {
+                                setShowStartPicker(false);
+                                if (selectedDate && event.type !== 'dismissed') {
+                                    setStartDate(selectedDate);
+                                }
+                                }}
+                            />
+                            )}
+
+                            {showEndPicker && (
+                            <DateTimePicker
+                                value={endDate}
+                                mode="date"
+                                display="default"
+                                minimumDate={startDate} // Impede seleção de data anterior à data de início
+                                onChange={(event, selectedDate) => {
+                                setShowEndPicker(false);
+                                if (selectedDate && event.type !== 'dismissed') {
+                                    setEndDate(selectedDate);
+                                }
+                                }}
+                            />
+                            )}
+
 
 
                             <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 25 }}>
@@ -553,3 +583,4 @@ export default function Home() {
         </SafeAreaView>
         );
 }
+
