@@ -527,8 +527,6 @@ export default function Home() {
                                 </View>
                             </View>
 
-                            {/* Seus DatePickers (showStartPicker, showEndPicker) aqui */}
-                            {/* ... */}
                             {showStartPicker && (
                             <DateTimePicker
                                 value={startDate}
