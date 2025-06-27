@@ -1,5 +1,7 @@
 🚀 Project Flow - Conversão para React Native
 
+Video de apresentação : https://drive.google.com/drive/folders/1GkqIbGXF0JZ9-PtVD41vXPCzSnkqjgST
+
 📌 Introdução
 
 O Project Flow é um sistema criado para facilitar o gerenciamento de projetos e times, ajudando na organização de tarefas, acompanhamento de progresso e colaboração entre membros. Inicialmente desenvolvido em Bubble, ele será convertido para React Native para garantir melhor desempenho e escalabilidade, permitindo sua utilização em dispositivos Android e iOS.
